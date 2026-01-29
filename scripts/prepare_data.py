@@ -276,13 +276,15 @@ def main():
     train_path = os.path.join(tokens_dir, "train.bin")
     val_path = os.path.join(tokens_dir, "val.bin")
 
-    if os.path.exists(train_path):
+    if os.path.exists(train_path) and os.path.getsize(train_path) > 0:
         train_ds = TokenDataset(train_path, block_size=128)
         print(f"[Verify] Train dataset: {train_ds.num_tokens:,} tokens, {len(train_ds):,} samples")
 
-    if os.path.exists(val_path):
+    if os.path.exists(val_path) and os.path.getsize(val_path) > 0:
         val_ds = TokenDataset(val_path, block_size=128)
         print(f"[Verify] Val dataset: {val_ds.num_tokens:,} tokens, {len(val_ds):,} samples")
+    else:
+        print(f"[Verify] Val dataset: (empty or too small)")
 
     # Quick encode/decode test
     test_text = "Hello, world!"

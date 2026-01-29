@@ -473,28 +473,30 @@ class GPT(nn.Module):
             Configured optimizer
         """
         # Separate parameters into decay and no-decay groups
+        # Note: lm_head.weight is tied to tok_emb.weight, so we work with actual params
+        param_dict = {pn: p for pn, p in self.named_parameters()}
+
         decay = set()
         no_decay = set()
 
-        whitelist = (nn.Linear,)
-        blacklist = (nn.LayerNorm, nn.Embedding)
+        for pn, p in param_dict.items():
+            if pn.endswith('bias'):
+                # All biases: no decay
+                no_decay.add(pn)
+            elif pn.endswith('weight') and ('ln_' in pn or 'ln_f' in pn):
+                # LayerNorm weights: no decay
+                no_decay.add(pn)
+            elif pn.endswith('weight') and ('tok_emb' in pn or 'pos_emb' in pn):
+                # Embedding weights: no decay
+                no_decay.add(pn)
+            elif pn.endswith('weight'):
+                # All other weights (Linear): decay
+                decay.add(pn)
+            else:
+                # Catch-all: no decay
+                no_decay.add(pn)
 
-        for mn, m in self.named_modules():
-            for pn, p in m.named_parameters():
-                fpn = f"{mn}.{pn}" if mn else pn  # Full parameter name
-
-                if pn.endswith('bias'):
-                    # All biases: no decay
-                    no_decay.add(fpn)
-                elif pn.endswith('weight') and isinstance(m, blacklist):
-                    # LayerNorm and Embedding weights: no decay
-                    no_decay.add(fpn)
-                elif pn.endswith('weight') and isinstance(m, whitelist):
-                    # Linear weights: decay
-                    decay.add(fpn)
-
-        # Validate that all parameters are accounted for
-        param_dict = {pn: p for pn, p in self.named_parameters()}
+        # Validate
         inter_params = decay & no_decay
         union_params = decay | no_decay
         assert len(inter_params) == 0, f"Parameters in both sets: {inter_params}"

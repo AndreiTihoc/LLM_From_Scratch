@@ -231,7 +231,7 @@ def train(
     # Mixed precision setup
     dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
     ctx = torch.amp.autocast(device_type=device_type, dtype=dtype) if train_config.use_amp and device_type == "cuda" else nullcontext()
-    scaler = torch.cuda.amp.GradScaler(enabled=train_config.use_amp and device_type == "cuda")
+    scaler = torch.amp.GradScaler(device_type, enabled=train_config.use_amp and device_type == "cuda")
     print(f"[Train] Mixed precision: {train_config.use_amp}, dtype: {dtype if train_config.use_amp else 'float32'}")
 
     # Load datasets
@@ -245,7 +245,16 @@ def train(
         raise FileNotFoundError(f"Validation data not found: {val_path}")
 
     train_dataset = TokenDataset(train_path, model_config.block_size)
-    val_dataset = TokenDataset(val_path, model_config.block_size)
+
+    # Val dataset might be empty for very small datasets
+    val_dataset = None
+    if os.path.getsize(val_path) > 0:
+        val_dataset = TokenDataset(val_path, model_config.block_size)
+        if len(val_dataset) == 0:
+            val_dataset = None
+            print("[Train] Warning: Val dataset too small, skipping validation")
+    else:
+        print("[Train] Warning: Val dataset empty, skipping validation")
 
     # Load vocab size from tokenizer config if available
     tokenizer_config_path = os.path.join(
@@ -373,13 +382,19 @@ def train(
                 model, train_dataset, train_config.eval_steps,
                 train_config.batch_size, device, ctx
             )
-            val_loss, val_ppl = evaluate(
-                model, val_dataset, train_config.eval_steps,
-                train_config.batch_size, device, ctx
-            )
 
-            print(f"\n[Eval] Step {step}: train_loss={train_loss:.4f} (ppl={train_ppl:.2f}), "
-                  f"val_loss={val_loss:.4f} (ppl={val_ppl:.2f})")
+            # Evaluate on val if available, otherwise use train loss
+            if val_dataset is not None:
+                val_loss, val_ppl = evaluate(
+                    model, val_dataset, train_config.eval_steps,
+                    train_config.batch_size, device, ctx
+                )
+                print(f"\n[Eval] Step {step}: train_loss={train_loss:.4f} (ppl={train_ppl:.2f}), "
+                      f"val_loss={val_loss:.4f} (ppl={val_ppl:.2f})")
+            else:
+                val_loss = train_loss
+                val_ppl = train_ppl
+                print(f"\n[Eval] Step {step}: train_loss={train_loss:.4f} (ppl={train_ppl:.2f})")
 
             # Save best model
             if val_loss < best_val_loss:

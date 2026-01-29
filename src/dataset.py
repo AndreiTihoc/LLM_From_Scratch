@@ -141,9 +141,16 @@ class TokenDataset:
         self.block_size = block_size
         self.dtype = dtype
 
-        # Memory-map the file
-        self.data = np.memmap(path, dtype=dtype, mode="r")
-        self.num_tokens = len(self.data)
+        # Check file size first (handle empty files)
+        file_size = os.path.getsize(path)
+        if file_size == 0:
+            self.data = np.array([], dtype=dtype)
+            self.num_tokens = 0
+            print(f"[Dataset] Warning: {path} is empty")
+        else:
+            # Memory-map the file
+            self.data = np.memmap(path, dtype=dtype, mode="r")
+            self.num_tokens = len(self.data)
 
         # Calculate number of valid starting positions
         # We need block_size + 1 tokens (input + 1 for target shift)
@@ -243,16 +250,16 @@ def prepare_dataset(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Count lines first for progress bar
+    # Count NON-EMPTY lines first (important for correct split)
     if verbose:
         print("[Dataset] Counting lines...")
     with open(input_path, "r", encoding="utf-8", errors="replace") as f:
-        total_lines = sum(1 for _ in f)
+        total_lines = sum(1 for line in f if line.strip())
     if max_lines:
         total_lines = min(total_lines, max_lines)
 
     # Calculate split point
-    val_lines = int(total_lines * val_split)
+    val_lines = max(1, int(total_lines * val_split))  # At least 1 val line
     train_lines = total_lines - val_lines
 
     if verbose:
