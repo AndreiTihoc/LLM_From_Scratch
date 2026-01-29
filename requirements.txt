@@ -1,0 +1,26 @@
+# ============================================
+# TinyGPT - Dependencies
+# Minimal deps: PyTorch + essentials only
+# ============================================
+
+# Core ML
+torch>=2.0.0
+numpy>=1.21.0
+
+# Progress bars
+tqdm>=4.60.0
+
+# Optional: for weight export (can use torch save instead)
+safetensors>=0.3.0
+
+# Optional: for visualization
+matplotlib>=3.5.0
+
+# Optional: YAML config (stdlib has no YAML, use JSON instead or this)
+pyyaml>=6.0
+
+# Note: We do NOT use:
+# - transformers (we build from scratch)
+# - datasets (we use custom memmap)
+# - sentencepiece (we build our own BPE)
+# - accelerate (we use native PyTorch amp)

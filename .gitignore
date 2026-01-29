@@ -1,0 +1,87 @@
+# ============================================
+# TinyGPT - .gitignore
+# Keep repo clean: no data, checkpoints, or large files
+# ============================================
+
+# Data directories (can be large)
+data/
+raw_data/
+
+# Checkpoints and model outputs
+checkpoints/
+outputs/
+exports/
+
+# llama.cpp build artifacts
+llama.cpp/
+
+# GGUF files
+*.gguf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+wandb/
+runs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Safetensors and PyTorch models (keep them out of git)
+*.safetensors
+*.pt
+*.pth
+*.bin
+
+# Large text files
+*.txt.gz
+*.tar.gz
+*.zip
