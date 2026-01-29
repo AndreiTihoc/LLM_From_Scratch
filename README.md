@@ -1,4 +1,4 @@
-# TinyGPT: A GPT-Style LLM From Scratch
+# ScratchGPT: A GPT-Style LLM From Scratch
 
 A complete, educational implementation of a GPT-style language model built from scratch using only PyTorch and standard Python libraries. No HuggingFace Trainer, no nanoGPT copying – just clean, readable code.
 
@@ -9,6 +9,30 @@ A complete, educational implementation of a GPT-style language model built from 
 - **Training loop** - Mixed precision, gradient accumulation, cosine LR schedule, checkpointing
 - **Text generation** - Temperature, top-k, top-p (nucleus) sampling
 - **GGUF export** - Convert to llama.cpp format for efficient CPU inference
+
+## Screenshots
+
+### Training Progress
+Final stage of the training loop showing loss convergence:
+
+![Training Progress](images/image1.png)
+
+### Text Generation
+Model completing a prompt correctly:
+
+![Text Generation](images/image2.png)
+
+## Pre-trained Weights
+
+A pre-trained `latest.pt` checkpoint is available in the repository. You can use it directly for text generation without training:
+
+```bash
+python -m src.sample --checkpoint checkpoints/latest.pt --prompt "Your prompt here" --max_tokens 100
+```
+
+> **Note:** Training data is not included in this repository (gitignored due to size). If you want to train from scratch, download the data using `./scripts/download_data.sh`. The model was trained on the [TinyStories](https://huggingface.co/datasets/roneneldan/TinyStories) dataset.
+
+---
 
 ## Project Structure
 
@@ -34,12 +58,16 @@ LLM_From_Scratch/
 │   ├── convert_to_gguf.py  # Custom GGUF converter
 │   ├── gguf_quantize.sh    # Quantize GGUF model
 │   └── run_llamacpp.sh     # Run inference with llama.cpp
+├── images/                 # Screenshots
+├── checkpoints/            # Model weights
 ├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
 
-## Quick Start (5-Minute Sanity Test)
+---
+
+## Quick Start
 
 Run this sequence to validate everything works:
 
@@ -63,14 +91,16 @@ python -m src.sample --checkpoint checkpoints/best.pt --prompt "Once upon a time
 ./scripts/export.sh
 
 # 7. Convert to GGUF (requires llama.cpp)
-./scripts/gguf_convert.sh exports/tinygpt
+./scripts/gguf_convert.sh exports/scratchgpt
 
 # 8. Quantize to Q4_K_M
-./scripts/gguf_quantize.sh exports/tinygpt/model-f16.gguf
+./scripts/gguf_quantize.sh exports/scratchgpt/model-f16.gguf
 
 # 9. Run with llama.cpp
-./scripts/run_llamacpp.sh exports/tinygpt/model-q4_k_m.gguf "Hello"
+./scripts/run_llamacpp.sh exports/scratchgpt/model-q4_k_m.gguf "Hello"
 ```
+
+---
 
 ## Detailed Usage
 
@@ -80,8 +110,8 @@ python -m src.sample --checkpoint checkpoints/best.pt --prompt "Once upon a time
 pip install -r requirements.txt
 ```
 
-Required: `torch`, `numpy`, `tqdm`
-Optional: `safetensors` (for model export), `matplotlib` (for visualization)
+**Required:** `torch`, `numpy`, `tqdm`
+**Optional:** `safetensors` (for model export), `matplotlib` (for visualization)
 
 ### 2. Download Training Data
 
@@ -186,14 +216,16 @@ python -m src.sample -c checkpoints/best.pt -p "Once upon" \
 ./scripts/export.sh
 
 # Convert to GGUF
-./scripts/gguf_convert.sh exports/tinygpt
+./scripts/gguf_convert.sh exports/scratchgpt
 
 # Quantize to Q4_K_M (recommended for 8GB RAM)
-./scripts/gguf_quantize.sh exports/tinygpt/model-f16.gguf
+./scripts/gguf_quantize.sh exports/scratchgpt/model-f16.gguf
 
 # Run with llama.cpp
-./scripts/run_llamacpp.sh exports/tinygpt/model-q4_k_m.gguf "Your prompt here"
+./scripts/run_llamacpp.sh exports/scratchgpt/model-q4_k_m.gguf "Your prompt here"
 ```
+
+---
 
 ## Model Presets
 
@@ -201,6 +233,8 @@ python -m src.sample -c checkpoints/best.pt -p "Once upon" \
 |--------|--------|-------|-----|---------|-------------|
 | toy    | 4      | 4     | 256 | 128     | ~3M         |
 | small  | 8      | 8     | 512 | 256     | ~25M        |
+
+---
 
 ## Training Tips
 
@@ -219,6 +253,8 @@ python -m src.sample -c checkpoints/best.pt -p "Once upon" \
 3. **Larger model**: Use `--preset small` (needs GPU)
 4. **Lower learning rate**: `--lr 1e-4`
 5. **More warmup**: `--warmup_steps 200`
+
+---
 
 ## Architecture Details
 
@@ -251,6 +287,8 @@ Weight decay is NOT applied to:
 - LayerNorm parameters
 - Embedding weights
 
+---
+
 ## Project Constraints
 
 This project is designed to work within these constraints:
@@ -268,6 +306,8 @@ Memmap allows accessing large token files without loading into RAM:
 self.data = np.memmap(path, dtype=np.uint16, mode="r")
 ```
 
+---
+
 ## Files Not in Git
 
 These directories are gitignored (create locally or on Colab):
@@ -275,6 +315,8 @@ These directories are gitignored (create locally or on Colab):
 - `checkpoints/` - Model checkpoints
 - `exports/` - Exported models
 - `llama.cpp/` - llama.cpp clone for GGUF conversion
+
+---
 
 ## Troubleshooting
 
@@ -297,6 +339,8 @@ These directories are gitignored (create locally or on Colab):
 - Train longer
 - Use more data
 - Try different sampling parameters (lower temperature)
+
+---
 
 ## License
 
