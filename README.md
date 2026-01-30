@@ -9,7 +9,8 @@ A complete, educational implementation of a GPT-style language model built from 
 - **Training loop** - Mixed precision, gradient accumulation, cosine LR schedule, checkpointing
 - **Text generation** - Temperature, top-k, top-p (nucleus) sampling
 - **GGUF export** - Convert to llama.cpp format for efficient CPU inference
-- **Fine-tuning support** - Fine-tune on custom datasets like NVD (National Vulnerability Database)
+- **Fine-tuning support** - Full fine-tuning on custom datasets
+- **QLoRA fine-tuning** - Memory-efficient fine-tuning with LoRA adapters and optional 4-bit quantization
 
 ## Screenshots
 
@@ -22,6 +23,16 @@ Final stage of the training loop showing loss convergence:
 Model completing a prompt correctly:
 
 ![Text Generation](images/image2.png)
+
+### CyberExploit Fine-Tuning
+QLoRA fine-tuning on the Exploit Database Dataset:
+
+![Fine-Tuning Progress](images/image3.png)
+
+### Fine-Tuned Model Output
+Testing the fine-tuned CyberExploit model:
+
+![Fine-Tuned Output](images/image4.png)
 
 ## Pre-trained Weights
 
@@ -68,10 +79,19 @@ Content-Type: application/x-www-form-urlencoded
 ```
 
 #### 2. Training Strategy
-- **Full fine-tuning** - All model weights are updated (no LoRA/adapters)
-- **Lower learning rate** - 1e-4 vs 3e-4 for pre-training
-- **Shorter training** - 2000 steps typically sufficient
-- **Mixed precision** - FP16/BF16 for memory efficiency
+
+Two fine-tuning approaches are available:
+
+**Full Fine-Tuning** (`finetune_cyberexploit.py`):
+- All model weights are updated
+- Lower learning rate (1e-4 vs 3e-4 for pre-training)
+- Requires more VRAM
+
+**QLoRA Fine-Tuning** (`finetune_qlora.py`):
+- Only LoRA adapters are trained (~2-5% of parameters)
+- Optional 4-bit quantization for reduced memory
+- Higher learning rate for LoRA (2e-4)
+- Memory-efficient for consumer GPUs
 
 #### 3. Hardware Requirements
 Optimized for **Google Colab T4 GPU** (16GB VRAM):
@@ -177,6 +197,117 @@ attacker injects JavaScript via 'HwName' parameter, causing stored XSS.
 
 ---
 
+## QLoRA Fine-Tuning
+
+QLoRA (Quantized Low-Rank Adaptation) enables memory-efficient fine-tuning by:
+1. Quantizing the base model to 4-bit (optional, requires `bitsandbytes`)
+2. Adding small trainable LoRA adapters to attention layers
+3. Training only the adapters (~2-5% of total parameters)
+
+### Why QLoRA?
+
+| Aspect | Full Fine-Tuning | QLoRA |
+|--------|------------------|-------|
+| Trainable params | 100% (~29M) | ~2-5% (~600K) |
+| VRAM usage | High | Low |
+| Training speed | Slower | Faster |
+| Quality | Best | Near-best |
+
+### Quick Start: QLoRA
+
+```bash
+# 1. Prepare data (same as full fine-tuning)
+python scripts/prepare_cyberexploit_data.py
+
+# 2. QLoRA fine-tune (LoRA only, no quantization)
+python scripts/finetune_qlora.py \
+    --preset small \
+    --lora_r 16 \
+    --lora_alpha 32 \
+    --max_steps 2000
+
+# 3. Test the model
+python scripts/test_qlora.py \
+    --checkpoint checkpoints/qlora/best_qlora.pt \
+    --prompt "What is SQL injection?"
+```
+
+### QLoRA with 4-bit Quantization
+
+For maximum memory savings (requires `bitsandbytes`):
+
+```bash
+# Install bitsandbytes
+pip install bitsandbytes
+
+# QLoRA with 4-bit base model
+python scripts/finetune_qlora.py \
+    --preset small \
+    --use_4bit \
+    --lora_r 16 \
+    --max_steps 2000
+```
+
+### LoRA Configuration Options
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--lora_r` | 16 | LoRA rank (higher = more capacity) |
+| `--lora_alpha` | 32 | Scaling factor (typically 2x rank) |
+| `--lora_dropout` | 0.05 | Dropout for regularization |
+| `--target_modules` | c_attn, c_proj | Which layers to adapt |
+| `--use_4bit` | False | Enable 4-bit quantization |
+
+### Google Colab QLoRA
+
+```python
+# Install dependencies
+!pip install bitsandbytes -q  # Optional, for 4-bit
+
+# Prepare data
+!python scripts/prepare_cyberexploit_data.py --vocab_size 8192
+
+# QLoRA fine-tune
+!python scripts/finetune_qlora.py \
+    --preset small \
+    --batch_size 8 \
+    --grad_accum 8 \
+    --lora_r 16 \
+    --max_steps 2000
+
+# Test
+!python scripts/test_qlora.py \
+    -c checkpoints/qlora/best_qlora.pt \
+    -p "What is buffer overflow?"
+```
+
+### Loading QLoRA Models
+
+```python
+import torch
+from src.model import GPT
+from src.config import ModelConfig
+from src.lora import LoRAConfig, apply_lora
+from src.tokenizer import ByteBPETokenizer
+
+# Load checkpoint
+checkpoint = torch.load('checkpoints/qlora/best_qlora.pt', map_location='cuda')
+model_config = ModelConfig(**checkpoint['model_config'])
+lora_config = LoRAConfig.from_dict(checkpoint['lora_config'])
+
+# Create model with LoRA
+model = GPT(model_config)
+model = apply_lora(model, lora_config, verbose=False)
+model.load_state_dict(checkpoint['model'])
+model.eval()
+
+# Generate
+tokenizer = ByteBPETokenizer.load('data/cyberexploit/tokenizer')
+# ... use model.generate()
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -184,6 +315,7 @@ LLM_From_Scratch/
 ├── src/
 │   ├── config.py           # Configuration management
 │   ├── model.py            # GPT model implementation
+│   ├── lora.py             # LoRA/QLoRA implementation
 │   ├── train.py            # Training loop
 │   ├── sample.py           # Text generation
 │   ├── dataset.py          # Memmap dataset handling
@@ -195,7 +327,10 @@ LLM_From_Scratch/
 │   ├── download_data.sh    # Download training data
 │   ├── prepare_data.py     # Data preparation logic
 │   ├── prepare_cyberexploit_data.py  # CyberExploitDB preparation
-│   ├── finetune_cyberexploit.py      # Fine-tuning script
+│   ├── finetune_cyberexploit.py      # Full fine-tuning script
+│   ├── finetune_qlora.py             # QLoRA fine-tuning script
+│   ├── test_cyberexploit.py          # Test fine-tuned models
+│   ├── test_qlora.py                 # Test QLoRA models
 │   ├── train_colab.sh      # Training script for Colab
 │   ├── export.sh           # Export model
 │   ├── gguf_convert.sh     # Convert to GGUF
@@ -392,6 +527,7 @@ python -m src.sample -c checkpoints/best.pt -p "Once upon" \
 3. **Reduce block size**: `--block_size 64`
 4. **Reduce vocab size**: `--vocab_size 2048` when preparing data
 5. **Disable mixed precision on CPU**: `--no_amp`
+6. **Use QLoRA**: For fine-tuning, use `finetune_qlora.py` with `--use_4bit` for ~75% memory reduction
 
 ### Improving Results
 
@@ -498,6 +634,8 @@ MIT License - Use freely for learning and experimentation.
 Inspired by:
 - [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
 - [GPT-2 Paper](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
+- [LoRA Paper](https://arxiv.org/abs/2106.09685) - Low-Rank Adaptation
+- [QLoRA Paper](https://arxiv.org/abs/2305.14314) - Quantized LoRA
 - [llama.cpp](https://github.com/ggerganov/llama.cpp)
 - [minGPT](https://github.com/karpathy/minGPT)
 - [Exploit Database Dataset](https://huggingface.co/datasets/darkknight25/Exploit_Database_Dataset) by darkknight25
