@@ -168,7 +168,7 @@ def convert_scratchgpt_to_gguf(
         state_dict = load_file(weights_path)
     else:
         weights_path = os.path.join(input_dir, "pytorch_model.bin")
-        state_dict = torch.load(weights_path, map_location="cpu")
+        state_dict = torch.load(weights_path, map_location="cpu", weights_only=False)
 
     # Extract original weights (we prefixed them with "original.")
     original_weights = {

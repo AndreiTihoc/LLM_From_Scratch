@@ -181,7 +181,7 @@ def load_checkpoint(
         (step, best_val_loss)
     """
     print(f"[Checkpoint] Loading from {path}...")
-    checkpoint = torch.load(path, map_location="cpu")
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
 
     model.load_state_dict(checkpoint["model"])
     print(f"[Checkpoint] Loaded model weights")

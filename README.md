@@ -9,7 +9,7 @@ A complete, educational implementation of a GPT-style language model built from 
 - **Training loop** - Mixed precision, gradient accumulation, cosine LR schedule, checkpointing
 - **Text generation** - Temperature, top-k, top-p (nucleus) sampling
 - **GGUF export** - Convert to llama.cpp format for efficient CPU inference
-- **Fine-tuning support** - Fine-tune on custom datasets like CyberExploitDB
+- **Fine-tuning support** - Fine-tune on custom datasets like NVD (National Vulnerability Database)
 
 ## Screenshots
 
@@ -35,34 +35,36 @@ python -m src.sample --checkpoint checkpoints/latest.pt --prompt "Your prompt he
 
 ---
 
-## Fine-Tuning on CyberExploitDB
+## Fine-Tuning on Exploit Database Dataset
 
-ScratchGPT can be fine-tuned on the [CyberExploitDB](https://huggingface.co/datasets/Canstralian/CyberExploitDB) dataset to learn about cybersecurity vulnerabilities, CVEs, and exploit analysis.
+ScratchGPT can be fine-tuned on the [Exploit Database Dataset](https://huggingface.co/datasets/darkknight25/Exploit_Database_Dataset) to learn about cybersecurity vulnerabilities, CVEs, and exploit analysis.
 
 ### Dataset Overview
 
-The CyberExploitDB dataset contains:
-- **CVE IDs** - Vulnerability identifiers (e.g., CVE-2018-0001)
-- **Descriptions** - Detailed explanations of vulnerabilities
-- **Affected Systems** - Software versions impacted
-- **Security Advisories** - Mitigation recommendations
+The Exploit Database Dataset contains ~1400 curated entries of cybersecurity vulnerabilities (2021-2025):
+- **CVE IDs** - Vulnerability identifiers (e.g., CVE-2024-30157)
+- **Descriptions** - Technical explanations of vulnerabilities
+- **Vulnerability Types** - RCE, XSS, SQL Injection, Path Traversal, DoS, etc.
+- **Platforms** - Web, Software, Network, Mobile, IoT
+- **Proof of Concepts** - Actual exploit code and commands
 
-Dataset source: [Canstralian/CyberExploitDB on Hugging Face](https://huggingface.co/datasets/Canstralian/CyberExploitDB)
+Dataset source: [darkknight25/Exploit_Database_Dataset on Hugging Face](https://huggingface.co/datasets/darkknight25/Exploit_Database_Dataset)
 
 ### Fine-Tuning Approach
 
 #### 1. Data Preparation
-CVE records are formatted into conversational training examples:
+The script downloads the Exploit Database Dataset and formats CVE records into conversational training examples:
 
 ```
-<|user|>What is CVE-2018-0001?<|assistant|>CVE-2018-0001 is a security vulnerability. Remote code execution via PHP use-after-free...
+<|user|>What is CVE-2024-30157?<|assistant|>CVE-2024-30157: Windows Task Scheduler - RCE. Task Scheduler flaw in Windows allows unauthenticated RCE.
 
-<|user|>What is the severity of CVE-2018-0002?<|assistant|>HIGH - This vulnerability can cause denial of service or memory corruption...
+<|user|>What type of vulnerability is CVE-2019-5418?<|assistant|>CVE-2019-5418 is a Path Traversal vulnerability affecting Web systems. Path traversal in Action View allows file disclosure via crafted accept headers.
 
-<|user|>Generate a security advisory for CVE-2018-0003<|assistant|>SECURITY ADVISORY
-CVE: CVE-2018-0003
-Severity: Review required
-Description: MPLS packet processing kernel crash...
+<|user|>Show the proof of concept for CVE-2019-7671<|assistant|>PoC for CVE-2019-7671 (Stored XSS):
+POST /bin/sysfcgi.fx HTTP/1.1
+Host: 192.168.13.37
+Content-Type: application/x-www-form-urlencoded
+<param name="HwName" value="<script>alert('XSS')</script>"/>
 ```
 
 #### 2. Training Strategy
@@ -84,16 +86,17 @@ Optimized for **Google Colab T4 GPU** (16GB VRAM):
 ### Quick Start: Fine-Tuning
 
 ```bash
-# 1. Prepare the cybersecurity dataset
+# 1. Prepare the Exploit Database Dataset (downloads from Hugging Face)
 python scripts/prepare_cyberexploit_data.py
 
 # 2. Fine-tune the model
-python scripts/finetune_cyberexploit.py
+python scripts/finetune_cyberexploit.py --preset small --max_steps 3000
 
 # 3. Test the fine-tuned model
 python -m src.sample \
     --checkpoint checkpoints/cyberexploit/best_cyberexploit.pt \
-    --prompt "<|user|>What is CVE-2018-0001?<|assistant|>"
+    --tokenizer data/cyberexploit/tokenizer \
+    --prompt "<|user|>What is CVE-2024-30157?<|assistant|>"
 ```
 
 ### Google Colab Fine-Tuning
@@ -102,11 +105,25 @@ Use the provided notebook: `notebooks/finetune_cyberexploit_colab.ipynb`
 
 ```python
 # In Colab:
+
+# Step 1: Prepare Exploit Database Dataset (downloads from Hugging Face)
+!pip install datasets -q
+!python scripts/prepare_cyberexploit_data.py --vocab_size 8192
+
+# Step 2: Fine-tune (takes ~30-60 min on T4)
 !python scripts/finetune_cyberexploit.py \
     --data_dir data/cyberexploit \
+    --preset small \
     --batch_size 8 \
     --grad_accum 8 \
-    --max_steps 2000
+    --max_steps 3000
+
+# Step 3: Test generation
+!python -m src.sample \
+    --checkpoint checkpoints/cyberexploit/best_cyberexploit.pt \
+    --tokenizer data/cyberexploit/tokenizer \
+    --prompt "<|user|>What is CVE-2024-30157?<|assistant|>" \
+    --max_tokens 200
 ```
 
 ### Quantization Options
@@ -135,18 +152,27 @@ After fine-tuning, convert to GGUF for efficient inference:
 
 ### Fine-Tuning Results
 
-After fine-tuning on CyberExploitDB, the model can:
+After fine-tuning on the Exploit Database Dataset, the model can:
 - Explain CVE vulnerabilities in plain language
+- Classify vulnerability types (RCE, XSS, SQLi, etc.)
 - Generate security advisories
-- Classify vulnerability severity
-- Describe affected systems and mitigations
+- Describe affected platforms
+- Provide proof-of-concept exploit information
 
 Example output:
 ```
-User: What is CVE-2018-0001?
-Assistant: CVE-2018-0001 is a security vulnerability involving remote code
-execution via PHP use-after-free. This vulnerability allows attackers to
-execute arbitrary code on affected systems.
+User: What is CVE-2024-30157?
+Assistant: CVE-2024-30157: Windows Task Scheduler - RCE. Task Scheduler flaw
+in Windows allows unauthenticated remote code execution.
+
+User: What type of vulnerability is CVE-2019-5418?
+Assistant: CVE-2019-5418 is a Path Traversal vulnerability affecting Web
+systems. Path traversal in Action View allows file disclosure via crafted
+accept headers with 'render file:' calls.
+
+User: What is the severity of CVE-2019-7671?
+Assistant: MEDIUM - CVE-2019-7671 is a Stored XSS vulnerability. Authenticated
+attacker injects JavaScript via 'HwName' parameter, causing stored XSS.
 ```
 
 ---
@@ -474,6 +500,6 @@ Inspired by:
 - [GPT-2 Paper](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
 - [llama.cpp](https://github.com/ggerganov/llama.cpp)
 - [minGPT](https://github.com/karpathy/minGPT)
-- [CyberExploitDB Dataset](https://huggingface.co/datasets/Canstralian/CyberExploitDB) by Canstralian
+- [Exploit Database Dataset](https://huggingface.co/datasets/darkknight25/Exploit_Database_Dataset) by darkknight25
 
 Built from scratch for educational purposes.

@@ -319,7 +319,7 @@ def export_model(
 
     # Load checkpoint
     print(f"\n[Export] Loading checkpoint from {checkpoint_path}...")
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
 
     # Build model config
     model_config_dict = checkpoint.get("model_config", {})
