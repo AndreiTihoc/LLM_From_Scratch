@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Custom TinyGPT to GGUF Converter
-================================
-Converts TinyGPT model to GGUF format for use with llama.cpp.
+Custom ScratchGPT to GGUF Converter
+===================================
+Converts ScratchGPT model to GGUF format for use with llama.cpp.
 
-This is a custom converter because TinyGPT has a slightly different
+This is a custom converter because ScratchGPT has a slightly different
 architecture than standard LLaMA models.
 
 Usage:
-    python scripts/convert_to_gguf.py --input exports/tinygpt --output model.gguf
+    python scripts/convert_to_gguf.py --input exports/scratchgpt --output model.gguf
 """
 
 import os
@@ -136,20 +136,20 @@ def write_metadata_kv(f, key: str, value, value_type=None):
     write_metadata_value(f, value, value_type)
 
 
-def convert_tinygpt_to_gguf(
+def convert_scratchgpt_to_gguf(
     input_dir: str,
     output_path: str,
     output_type: str = "f16"
 ) -> None:
     """
-    Convert TinyGPT model to GGUF format.
+    Convert ScratchGPT model to GGUF format.
 
     Args:
         input_dir: Directory containing exported model
         output_path: Output GGUF file path
         output_type: Output data type (f32 or f16)
     """
-    print(f"[GGUF] Converting TinyGPT to GGUF...")
+    print(f"[GGUF] Converting ScratchGPT to GGUF...")
     print(f"[GGUF] Input: {input_dir}")
     print(f"[GGUF] Output: {output_path}")
     print(f"[GGUF] Type: {output_type}")
@@ -159,7 +159,7 @@ def convert_tinygpt_to_gguf(
     with open(config_path, "r") as f:
         config = json.load(f)
 
-    tinygpt_config = config.get("tinygpt_config", config)
+    scratchgpt_config = config.get("scratchgpt_config", config)
 
     # Load weights
     weights_path = os.path.join(input_dir, "model.safetensors")
@@ -184,11 +184,11 @@ def convert_tinygpt_to_gguf(
     print(f"[GGUF] Loaded {len(original_weights)} weight tensors")
 
     # Model parameters
-    vocab_size = tinygpt_config.get("vocab_size", config.get("vocab_size"))
-    n_layer = tinygpt_config.get("n_layer", config.get("num_hidden_layers"))
-    n_head = tinygpt_config.get("n_head", config.get("num_attention_heads"))
-    d_model = tinygpt_config.get("d_model", config.get("hidden_size"))
-    block_size = tinygpt_config.get("block_size", config.get("max_position_embeddings"))
+    vocab_size = scratchgpt_config.get("vocab_size", config.get("vocab_size"))
+    n_layer = scratchgpt_config.get("n_layer", config.get("num_hidden_layers"))
+    n_head = scratchgpt_config.get("n_head", config.get("num_attention_heads"))
+    d_model = scratchgpt_config.get("d_model", config.get("hidden_size"))
+    block_size = scratchgpt_config.get("block_size", config.get("max_position_embeddings"))
 
     print(f"[GGUF] Model config:")
     print(f"  vocab_size: {vocab_size}")
@@ -204,7 +204,7 @@ def convert_tinygpt_to_gguf(
     tensors = []
     tensor_data = []
 
-    # Map TinyGPT weights to GGUF tensor names
+    # Map ScratchGPT weights to GGUF tensor names
     # GGUF expects specific tensor names for LLaMA-like models
     weight_mapping = {
         "tok_emb.weight": "token_embd.weight",
@@ -274,16 +274,16 @@ def convert_tinygpt_to_gguf(
 
         # Write metadata
         metadata = [
-            ("general.architecture", "tinygpt"),
-            ("general.name", "TinyGPT"),
+            ("general.architecture", "scratchgpt"),
+            ("general.name", "ScratchGPT"),
             ("general.quantization_version", 2),
-            ("tinygpt.context_length", block_size),
-            ("tinygpt.embedding_length", d_model),
-            ("tinygpt.block_count", n_layer),
-            ("tinygpt.attention.head_count", n_head),
-            ("tinygpt.attention.head_count_kv", n_head),
-            ("tinygpt.feed_forward_length", d_model * 4),
-            ("tinygpt.vocab_size", vocab_size),
+            ("scratchgpt.context_length", block_size),
+            ("scratchgpt.embedding_length", d_model),
+            ("scratchgpt.block_count", n_layer),
+            ("scratchgpt.attention.head_count", n_head),
+            ("scratchgpt.attention.head_count_kv", n_head),
+            ("scratchgpt.feed_forward_length", d_model * 4),
+            ("scratchgpt.vocab_size", vocab_size),
         ]
 
         for key, value in metadata:
@@ -332,7 +332,7 @@ def convert_tinygpt_to_gguf(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert TinyGPT to GGUF format"
+        description="Convert ScratchGPT to GGUF format"
     )
     parser.add_argument(
         "--input", "-i",
@@ -359,7 +359,7 @@ def main():
     if args.output is None:
         args.output = os.path.join(args.input, f"model-{args.type}.gguf")
 
-    convert_tinygpt_to_gguf(args.input, args.output, args.type)
+    convert_scratchgpt_to_gguf(args.input, args.output, args.type)
 
 
 if __name__ == "__main__":

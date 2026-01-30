@@ -9,6 +9,7 @@ A complete, educational implementation of a GPT-style language model built from 
 - **Training loop** - Mixed precision, gradient accumulation, cosine LR schedule, checkpointing
 - **Text generation** - Temperature, top-k, top-p (nucleus) sampling
 - **GGUF export** - Convert to llama.cpp format for efficient CPU inference
+- **Fine-tuning support** - Fine-tune on custom datasets like CyberExploitDB
 
 ## Screenshots
 
@@ -34,6 +35,122 @@ python -m src.sample --checkpoint checkpoints/latest.pt --prompt "Your prompt he
 
 ---
 
+## Fine-Tuning on CyberExploitDB
+
+ScratchGPT can be fine-tuned on the [CyberExploitDB](https://huggingface.co/datasets/Canstralian/CyberExploitDB) dataset to learn about cybersecurity vulnerabilities, CVEs, and exploit analysis.
+
+### Dataset Overview
+
+The CyberExploitDB dataset contains:
+- **CVE IDs** - Vulnerability identifiers (e.g., CVE-2018-0001)
+- **Descriptions** - Detailed explanations of vulnerabilities
+- **Affected Systems** - Software versions impacted
+- **Security Advisories** - Mitigation recommendations
+
+Dataset source: [Canstralian/CyberExploitDB on Hugging Face](https://huggingface.co/datasets/Canstralian/CyberExploitDB)
+
+### Fine-Tuning Approach
+
+#### 1. Data Preparation
+CVE records are formatted into conversational training examples:
+
+```
+<|user|>What is CVE-2018-0001?<|assistant|>CVE-2018-0001 is a security vulnerability. Remote code execution via PHP use-after-free...
+
+<|user|>What is the severity of CVE-2018-0002?<|assistant|>HIGH - This vulnerability can cause denial of service or memory corruption...
+
+<|user|>Generate a security advisory for CVE-2018-0003<|assistant|>SECURITY ADVISORY
+CVE: CVE-2018-0003
+Severity: Review required
+Description: MPLS packet processing kernel crash...
+```
+
+#### 2. Training Strategy
+- **Full fine-tuning** - All model weights are updated (no LoRA/adapters)
+- **Lower learning rate** - 1e-4 vs 3e-4 for pre-training
+- **Shorter training** - 2000 steps typically sufficient
+- **Mixed precision** - FP16/BF16 for memory efficiency
+
+#### 3. Hardware Requirements
+Optimized for **Google Colab T4 GPU** (16GB VRAM):
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| Batch size | 8 | Fits in 16GB VRAM |
+| Gradient accumulation | 8 | Effective batch = 64 |
+| Block size | 256 | Context length |
+| Mixed precision | FP16 | Memory savings |
+
+### Quick Start: Fine-Tuning
+
+```bash
+# 1. Prepare the cybersecurity dataset
+python scripts/prepare_cyberexploit_data.py
+
+# 2. Fine-tune the model
+python scripts/finetune_cyberexploit.py
+
+# 3. Test the fine-tuned model
+python -m src.sample \
+    --checkpoint checkpoints/cyberexploit/best_cyberexploit.pt \
+    --prompt "<|user|>What is CVE-2018-0001?<|assistant|>"
+```
+
+### Google Colab Fine-Tuning
+
+Use the provided notebook: `notebooks/finetune_cyberexploit_colab.ipynb`
+
+```python
+# In Colab:
+!python scripts/finetune_cyberexploit.py \
+    --data_dir data/cyberexploit \
+    --batch_size 8 \
+    --grad_accum 8 \
+    --max_steps 2000
+```
+
+### Quantization Options
+
+After fine-tuning, convert to GGUF for efficient inference:
+
+```bash
+# Export model
+./scripts/export.sh --checkpoint checkpoints/cyberexploit/best_cyberexploit.pt
+
+# Convert to GGUF (F16)
+./scripts/gguf_convert.sh exports/scratchgpt
+
+# Quantize to Q4_K_M (recommended for 8GB RAM)
+./scripts/gguf_quantize.sh exports/scratchgpt/model-f16.gguf
+```
+
+#### Quantization Formats
+
+| Format | Size | Quality | Use Case |
+|--------|------|---------|----------|
+| F16 | 100% | Best | GPU inference |
+| Q8_0 | ~50% | Excellent | High-end CPU |
+| Q4_K_M | ~25% | Good | Standard CPU (8GB RAM) |
+| Q4_0 | ~25% | Fair | Low memory systems |
+
+### Fine-Tuning Results
+
+After fine-tuning on CyberExploitDB, the model can:
+- Explain CVE vulnerabilities in plain language
+- Generate security advisories
+- Classify vulnerability severity
+- Describe affected systems and mitigations
+
+Example output:
+```
+User: What is CVE-2018-0001?
+Assistant: CVE-2018-0001 is a security vulnerability involving remote code
+execution via PHP use-after-free. This vulnerability allows attackers to
+execute arbitrary code on affected systems.
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -50,14 +167,18 @@ LLM_From_Scratch/
 │       └── train_bpe.py    # Tokenizer training script
 ├── scripts/
 │   ├── download_data.sh    # Download training data
-│   ├── prepare_data.sh     # Prepare data (tokenize)
 │   ├── prepare_data.py     # Data preparation logic
+│   ├── prepare_cyberexploit_data.py  # CyberExploitDB preparation
+│   ├── finetune_cyberexploit.py      # Fine-tuning script
 │   ├── train_colab.sh      # Training script for Colab
 │   ├── export.sh           # Export model
 │   ├── gguf_convert.sh     # Convert to GGUF
 │   ├── convert_to_gguf.py  # Custom GGUF converter
 │   ├── gguf_quantize.sh    # Quantize GGUF model
 │   └── run_llamacpp.sh     # Run inference with llama.cpp
+├── notebooks/
+│   ├── train_colab.ipynb              # Training notebook
+│   └── finetune_cyberexploit_colab.ipynb  # Fine-tuning notebook
 ├── images/                 # Screenshots
 ├── checkpoints/            # Model weights
 ├── requirements.txt
@@ -353,5 +474,6 @@ Inspired by:
 - [GPT-2 Paper](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
 - [llama.cpp](https://github.com/ggerganov/llama.cpp)
 - [minGPT](https://github.com/karpathy/minGPT)
+- [CyberExploitDB Dataset](https://huggingface.co/datasets/Canstralian/CyberExploitDB) by Canstralian
 
 Built from scratch for educational purposes.

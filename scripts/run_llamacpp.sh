@@ -2,12 +2,12 @@
 # ============================================
 # Run llama.cpp Inference Script
 # ============================================
-# Runs inference using llama.cpp with TinyGPT model.
+# Runs inference using llama.cpp with ScratchGPT model.
 #
 # Optimized settings for 8GB RAM systems.
 #
 # Usage:
-#   ./scripts/run_llamacpp.sh exports/tinygpt/model-q4_k_m.gguf
+#   ./scripts/run_llamacpp.sh exports/scratchgpt/model-q4_k_m.gguf
 #   ./scripts/run_llamacpp.sh model.gguf "Once upon a time"
 #   ./scripts/run_llamacpp.sh model.gguf --interactive
 # ============================================
@@ -15,7 +15,7 @@
 set -e
 
 # Configuration
-MODEL_PATH="${1:-exports/tinygpt/model-q4_k_m.gguf}"
+MODEL_PATH="${1:-exports/scratchgpt/model-q4_k_m.gguf}"
 PROMPT="${2:-Once upon a time}"
 LLAMA_CPP_DIR="llama.cpp"
 
@@ -33,7 +33,7 @@ REPEAT_PENALTY=1.1  # Repetition penalty
 cd "$(dirname "$0")/.."
 
 echo "============================================"
-echo "TinyGPT Inference with llama.cpp"
+echo "ScratchGPT Inference with llama.cpp"
 echo "============================================"
 echo "Model: $MODEL_PATH"
 echo "Context: $N_CTX"

@@ -1,4 +1,4 @@
-# TinyGPT Tokenizer Module
+# ScratchGPT Tokenizer Module
 """
 Byte-level BPE tokenizer implementation.
 

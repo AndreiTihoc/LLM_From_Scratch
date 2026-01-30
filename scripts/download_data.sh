@@ -2,7 +2,7 @@
 # ============================================
 # Download Data Script
 # ============================================
-# Downloads a small dataset for training TinyGPT.
+# Downloads a small dataset for training ScratchGPT.
 #
 # Options:
 #   --tiny     : Download tiny dataset (~5MB) for quick testing
@@ -55,7 +55,7 @@ DATA_DIR="data/raw"
 mkdir -p "$DATA_DIR"
 
 echo "============================================"
-echo "TinyGPT Data Download"
+echo "ScratchGPT Data Download"
 echo "============================================"
 echo "Size: $SIZE"
 echo "Output: $DATA_DIR"

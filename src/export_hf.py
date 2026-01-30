@@ -2,7 +2,7 @@
 """
 Export to Hugging Face-like Format
 ==================================
-Export trained TinyGPT model to a format compatible with llama.cpp conversion.
+Export trained ScratchGPT model to a format compatible with llama.cpp conversion.
 
 This creates:
 - config.json: Model configuration in HF-like format
@@ -14,7 +14,7 @@ The exported model can then be converted to GGUF format using:
     python llama.cpp/convert_hf_to_gguf.py exports/my_model/
 
 Usage:
-    python -m src.export_hf --checkpoint checkpoints/best.pt --output exports/tinygpt
+    python -m src.export_hf --checkpoint checkpoints/best.pt --output exports/scratchgpt
 
 Note: This export format is designed to be compatible with llama.cpp's
 convert_hf_to_gguf.py script, but full compatibility may require the
@@ -154,8 +154,8 @@ def export_config(
     # Create HF-compatible config
     hf_config = {
         # Architecture
-        "architectures": ["TinyGPTForCausalLM"],
-        "model_type": "tinygpt",
+        "architectures": ["ScratchGPTForCausalLM"],
+        "model_type": "scratchgpt",
 
         # Dimensions
         "vocab_size": model_config.vocab_size,
@@ -177,8 +177,8 @@ def export_config(
         "eos_token_id": 259,
         "pad_token_id": 256,
 
-        # TinyGPT-specific (for custom converter)
-        "tinygpt_config": model_config.to_dict(),
+        # ScratchGPT-specific (for custom converter)
+        "scratchgpt_config": model_config.to_dict(),
     }
 
     output_path = os.path.join(output_dir, "config.json")
@@ -275,7 +275,7 @@ def export_tokenizer(
 
     # Create tokenizer_config.json
     tokenizer_config = {
-        "model_type": "tinygpt",
+        "model_type": "scratchgpt",
         "bos_token": "<|bos|>",
         "eos_token": "<|eos|>",
         "unk_token": "<|unk|>",
@@ -312,7 +312,7 @@ def export_model(
         output_dir: Output directory for export
     """
     print("=" * 60)
-    print("TinyGPT Model Export")
+    print("ScratchGPT Model Export")
     print("=" * 60)
 
     os.makedirs(output_dir, exist_ok=True)
@@ -397,7 +397,7 @@ def export_model(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Export TinyGPT model for GGUF conversion",
+        description="Export ScratchGPT model for GGUF conversion",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
@@ -416,7 +416,7 @@ def main():
     parser.add_argument(
         "--output", "-o",
         type=str,
-        default="exports/tinygpt",
+        default="exports/scratchgpt",
         help="Output directory"
     )
     parser.add_argument(

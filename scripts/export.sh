@@ -17,7 +17,7 @@ cd "$(dirname "$0")/.."
 # Default paths
 CHECKPOINT="${1:-checkpoints/best.pt}"
 TOKENIZER="data/tokenizer"
-OUTPUT="exports/tinygpt"
+OUTPUT="exports/scratchgpt"
 
 # Parse named arguments
 while [[ $# -gt 0 ]]; do
@@ -60,7 +60,7 @@ if [ ! -d "$TOKENIZER" ]; then
 fi
 
 echo "============================================"
-echo "TinyGPT Model Export"
+echo "ScratchGPT Model Export"
 echo "============================================"
 echo "Checkpoint: $CHECKPOINT"
 echo "Tokenizer:  $TOKENIZER"

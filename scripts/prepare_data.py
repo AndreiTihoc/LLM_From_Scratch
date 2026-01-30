@@ -165,7 +165,7 @@ def encode_and_save(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Prepare data for TinyGPT training",
+        description="Prepare data for ScratchGPT training",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
@@ -220,7 +220,7 @@ def main():
         sys.exit(1)
 
     print("=" * 60)
-    print("TinyGPT Data Preparation")
+    print("ScratchGPT Data Preparation")
     print("=" * 60)
     print(f"Input: {args.input}")
     print(f"Output dir: {args.output_dir}")

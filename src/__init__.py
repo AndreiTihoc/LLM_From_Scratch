@@ -1,6 +1,6 @@
-# TinyGPT - A GPT-style LLM from scratch
+# ScratchGPT - A GPT-style LLM from scratch
 """
-TinyGPT: Educational implementation of a GPT-style language model.
+ScratchGPT: Educational implementation of a GPT-style language model.
 Built from scratch using only PyTorch and standard Python libraries.
 """
 

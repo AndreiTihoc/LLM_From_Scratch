@@ -10,13 +10,13 @@
 # 3. Converts model to F16 GGUF
 #
 # Usage:
-#   ./scripts/gguf_convert.sh exports/tinygpt
+#   ./scripts/gguf_convert.sh exports/scratchgpt
 # ============================================
 
 set -e
 
 # Configuration
-EXPORT_DIR="${1:-exports/tinygpt}"
+EXPORT_DIR="${1:-exports/scratchgpt}"
 LLAMA_CPP_DIR="llama.cpp"
 
 # Change to project root
@@ -55,7 +55,7 @@ echo "[GGUF] Attempting conversion with llama.cpp converter..."
 CUSTOM_CONVERTER="scripts/convert_to_gguf.py"
 
 if [ -f "$CUSTOM_CONVERTER" ]; then
-    echo "[GGUF] Using custom TinyGPT converter..."
+    echo "[GGUF] Using custom ScratchGPT converter..."
     python "$CUSTOM_CONVERTER" \
         --input "$EXPORT_DIR" \
         --output "$EXPORT_DIR/model-f16.gguf"

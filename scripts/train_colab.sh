@@ -26,13 +26,13 @@ set -e
 
 # Configuration
 PRESET="${1:-toy}"
-DRIVE_CHECKPOINT_DIR="/content/drive/MyDrive/tinygpt_checkpoints"
+DRIVE_CHECKPOINT_DIR="/content/drive/MyDrive/scratchgpt_checkpoints"
 
 # Change to project root
 cd "$(dirname "$0")/.."
 
 echo "============================================"
-echo "TinyGPT Colab Training"
+echo "ScratchGPT Colab Training"
 echo "============================================"
 echo "Preset: $PRESET"
 echo "Checkpoint dir: $DRIVE_CHECKPOINT_DIR"

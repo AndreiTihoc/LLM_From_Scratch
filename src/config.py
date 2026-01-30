@@ -1,5 +1,5 @@
 """
-TinyGPT Configuration Module
+ScratchGPT Configuration Module
 ============================
 Handles model, training, and data configuration.
 Supports presets (toy, small) and custom configurations.

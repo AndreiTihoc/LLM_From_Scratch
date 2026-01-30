@@ -2,7 +2,7 @@
 """
 Text Generation / Sampling Script
 ==================================
-Generate text from a trained TinyGPT model.
+Generate text from a trained ScratchGPT model.
 
 Supports various sampling strategies:
 - Greedy decoding (temperature=0 or do_sample=False)
@@ -40,7 +40,7 @@ from src.tokenizer import ByteBPETokenizer
 
 class TextGenerator:
     """
-    Text generation wrapper for TinyGPT.
+    Text generation wrapper for ScratchGPT.
 
     Handles model loading, tokenization, and generation with
     various sampling parameters.
@@ -235,7 +235,7 @@ class TextGenerator:
 def interactive_mode(generator: TextGenerator, args):
     """Run interactive generation loop."""
     print("\n" + "=" * 60)
-    print("TinyGPT Interactive Mode")
+    print("ScratchGPT Interactive Mode")
     print("=" * 60)
     print(f"Temperature: {args.temperature}")
     print(f"Top-k: {args.top_k}")
@@ -316,7 +316,7 @@ def interactive_mode(generator: TextGenerator, args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate text with TinyGPT",
+        description="Generate text with ScratchGPT",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
